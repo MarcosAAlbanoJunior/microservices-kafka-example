@@ -39,19 +39,21 @@ public class ProductServiceImpl implements ProductService {
 
         future.whenComplete((result, exception) -> {
             if(exception != null){
-                LOGGER.error("Failed to send message async: " + exception.getMessage());
+                LOGGER.error("Failed to send message async: {}", exception.getMessage());
             } else {
-                LOGGER.info("Message async sent successfully: " + result.getRecordMetadata());
+                LOGGER.info("Message async sent successfully: {}", result.getRecordMetadata());
             }
         });
-        LOGGER.info("Returning product id async");
 
        //sync
        SendResult<String, ProductCreatedEvent> result =
                 kafkaTemplate.send("product-created-events-topic", productId, productCreatedEvent).get();
+        LOGGER.info("Message async sent successfully: {}", result.getRecordMetadata());
+        LOGGER.info("Partition: {}", result.getRecordMetadata().partition());
+        LOGGER.info("Topic: {}", result.getRecordMetadata().topic());
+        LOGGER.info("Offset: {}", result.getRecordMetadata().offset());
 
-        LOGGER.info("Returning product id sync");
-
+        LOGGER.info("**** Returning product id sync ****");
         return productId;
     }
 }
