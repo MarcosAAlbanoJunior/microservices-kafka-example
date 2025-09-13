@@ -12,13 +12,13 @@ import org.springframework.stereotype.Service;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-@Service
-public class ProductServiceImpl implements ProductService {
+@Service("asyncProductService")
+public class ProductServiceAsyncImpl implements ProductService {
 
     private final KafkaTemplate<String, ProductCreatedEvent> kafkaTemplate;
     private final Logger LOGGER = LoggerFactory.getLogger(this.getClass());
 
-    public ProductServiceImpl(KafkaTemplate kafkaTemplate) {
+    public ProductServiceAsyncImpl(KafkaTemplate kafkaTemplate) {
         this.kafkaTemplate = kafkaTemplate;
     }
 
@@ -42,16 +42,11 @@ public class ProductServiceImpl implements ProductService {
                 LOGGER.error("Failed to send message async: {}", exception.getMessage());
             } else {
                 LOGGER.info("Message async sent successfully: {}", result.getRecordMetadata());
+                LOGGER.info("Partition: {}", result.getRecordMetadata().partition());
+                LOGGER.info("Topic: {}", result.getRecordMetadata().topic());
+                LOGGER.info("Offset: {}", result.getRecordMetadata().offset());
             }
         });
-
-       //sync
-       SendResult<String, ProductCreatedEvent> result =
-                kafkaTemplate.send("product-created-events-topic", productId, productCreatedEvent).get();
-        LOGGER.info("Message async sent successfully: {}", result.getRecordMetadata());
-        LOGGER.info("Partition: {}", result.getRecordMetadata().partition());
-        LOGGER.info("Topic: {}", result.getRecordMetadata().topic());
-        LOGGER.info("Offset: {}", result.getRecordMetadata().offset());
 
         LOGGER.info("**** Returning product id sync ****");
         return productId;
