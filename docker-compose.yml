@@ -15,6 +15,12 @@ services:
       - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
     volumes:
       - C:/kafka/volumes/volumes/server-1:/bitnami/kafka
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server kafka-1:9090 --list"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
   kafka-2:
     image: bitnami/kafka:latest
@@ -32,6 +38,12 @@ services:
       - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
     volumes:
       - C:/kafka/volumes/volumes/server-2:/bitnami/kafka
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server kafka-2:9090 --list"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
   kafka-3:
     image: bitnami/kafka:latest
@@ -49,6 +61,36 @@ services:
       - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
     volumes:
       - C:/kafka/volumes/server-3:/bitnami/kafka
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server kafka-3:9090 --list"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  kafka-cluster-ready:
+    image: bitnami/kafka:latest
+    depends_on:
+      kafka-1:
+        condition: service_healthy
+      kafka-2:
+        condition: service_healthy
+      kafka-3:
+        condition: service_healthy
+    command: >
+      sh -c "
+        echo '🔍 Verificando se todos os brokers estão no cluster...'
+        
+        until [ $$(kafka-broker-api-versions.sh --bootstrap-server kafka-1:9090,kafka-2:9090,kafka-3:9090 2>/dev/null | grep -c 'kafka-[1-3]:9090') -eq 3 ]; do
+          echo '⏳ Aguardando cluster completo...'
+          sleep 5
+        done
+        
+        echo '✅ Cluster Kafka está pronto!'
+        echo '📊 Brokers disponíveis:'
+        kafka-broker-api-versions.sh --bootstrap-server kafka-1:9090,kafka-2:9090,kafka-3:9090
+      "
+    restart: "no"
 
   # --- MICROSERVIÇOS ---
 
@@ -60,9 +102,8 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=docker
     depends_on:
-      - kafka-1
-      - kafka-2
-      - kafka-3
+      kafka-cluster-ready:
+        condition: service_completed_successfully
     ports:
       - "8081:8081"
 
@@ -74,8 +115,7 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=docker
     depends_on:
-      - kafka-1
-      - kafka-2
-      - kafka-3
+      kafka-cluster-ready:
+        condition: service_completed_successfully
     ports:
       - "8082:8082"
