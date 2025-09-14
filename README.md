@@ -187,7 +187,7 @@ cd microservices-kafka-example
 
 # Inicia Kafka + Microserviços
 docker-compose -f docker-compose.yml --env-file environment.env up
-obs: O processo pode levar alguns minutos, já que os microserviços dependem do Kafka estar pronto. Durante esse tempo, você verá várias mensagens de inicialização nos logs. Aguarde até que todos os serviços estejam marcados como healthy antes de começar a utilizá-los.
+obs: O processo pode levar alguns minutos, já que os microserviços dependem do Kafka estar pronto. Durante esse tempo, você verá várias mensagens de inicialização nos logs. Aguarde até que todos os serviços estejam marcados como healthy antes de começar a utilizá-los. Vai aparecer erros de org.apache.kafka.clients.NetworkClient até estabilizarem.
 
 # Inicia apenas o Kafka
 Caso preferir inciar só o kafka via docker e iniciar os microsserviços pela sua IDE use este compose
