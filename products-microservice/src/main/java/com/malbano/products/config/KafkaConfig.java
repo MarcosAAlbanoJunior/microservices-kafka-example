@@ -1,8 +1,5 @@
 package com.malbano.products.config;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import com.malbano.products.dto.ProductCreatedEvent;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -14,8 +11,13 @@ import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Configuration
 public class KafkaConfig {
+
+    public static final String PRODUCT_CREATED_EVENTS_TOPIC = "product-created-events-topic";
 
     @Value("${spring.kafka.producer.bootstrap-servers}")
     private String bootstrapServers;
@@ -30,17 +32,17 @@ public class KafkaConfig {
     private String acks;
 
     @Value("${spring.kafka.producer.properties.delivery.timeout.ms}")
-    private String deliveryTimeout;
+    private Integer deliveryTimeout;
 
     @Value("${spring.kafka.producer.properties.linger.ms}")
-    private String linger;
+    private Integer linger;
 
     @Value("${spring.kafka.producer.properties.request.timeout.ms}")
-    private String requestTimeout;
+    private Integer requestTimeout;
 
-    Map<String, Object> producerConfigs() {
+    @Bean
+    public Map<String, Object> producerConfigs() {
         Map<String, Object> config = new HashMap<>();
-
         config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, keySerializer);
         config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, valueSerializer);
@@ -48,27 +50,25 @@ public class KafkaConfig {
         config.put(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG, deliveryTimeout);
         config.put(ProducerConfig.LINGER_MS_CONFIG, linger);
         config.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, requestTimeout);
-
         return config;
     }
 
     @Bean
-    ProducerFactory<String, ProductCreatedEvent> producerFactory() {
+    public ProducerFactory<String, ProductCreatedEvent> producerFactory() {
         return new DefaultKafkaProducerFactory<>(producerConfigs());
     }
 
     @Bean
-    KafkaTemplate<String, ProductCreatedEvent> kafkaTemplate() {
-        return new KafkaTemplate<String, ProductCreatedEvent>(producerFactory());
+    public KafkaTemplate<String, ProductCreatedEvent> kafkaTemplate() {
+        return new KafkaTemplate<>(producerFactory());
     }
 
     @Bean
-    NewTopic createTopic() {
-        return TopicBuilder.name("product-created-events-topic")
+    public NewTopic createTopic() {
+        return TopicBuilder.name(PRODUCT_CREATED_EVENTS_TOPIC)
                 .partitions(3)
                 .replicas(3)
-                .configs(Map.of("min.insync.replicas","2"))
+                .configs(Map.of("min.insync.replicas", "2"))
                 .build();
     }
-
 }

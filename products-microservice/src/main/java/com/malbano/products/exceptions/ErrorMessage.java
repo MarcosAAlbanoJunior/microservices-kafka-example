@@ -1,27 +1,30 @@
 package com.malbano.products.exceptions;
 
-import java.util.Date;
+import com.fasterxml.jackson.annotation.JsonFormat;
+
+import java.time.LocalDateTime;
 
 public class ErrorMessage {
-    private Date timeStamp;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime timestamp;
     private String message;
     private String details;
 
     public ErrorMessage() {
     }
 
-    public ErrorMessage(Date timeStamp, String message, String details) {
-        this.timeStamp = timeStamp;
+    public ErrorMessage(LocalDateTime timestamp, String message, String details) {
+        this.timestamp = timestamp;
         this.message = message;
         this.details = details;
     }
 
-    public Date getTimeStamp() {
-        return timeStamp;
+    public LocalDateTime getTimestamp() {
+        return timestamp;
     }
 
-    public void setTimeStamp(Date timeStamp) {
-        this.timeStamp = timeStamp;
+    public void setTimestamp(LocalDateTime timestamp) {
+        this.timestamp = timestamp;
     }
 
     public String getMessage() {

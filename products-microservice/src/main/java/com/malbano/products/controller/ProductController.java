@@ -1,62 +1,54 @@
 package com.malbano.products.controller;
 
 import com.malbano.products.dto.CreateProductRequest;
-import com.malbano.products.exceptions.ErrorMessage;
 import com.malbano.products.service.ProductService;
-import com.malbano.products.service.impl.ProductServiceAsyncImpl;
-import com.malbano.products.service.impl.ProductServiceSyncImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Date;
-
 @RestController
 @RequestMapping("/products")
 public class ProductController {
 
-    private final ProductService productServiceSync;
-    private final ProductService productServiceAsync;
-    private final Logger LOGGER = LoggerFactory.getLogger(this.getClass());
+    private static final Logger LOGGER = LoggerFactory.getLogger(ProductController.class);
 
-    public ProductController(@Qualifier("syncProductService") ProductService productServiceSync,
-                             @Qualifier("asyncProductService") ProductService productServiceAsync) {
-        this.productServiceSync = productServiceSync;
-        this.productServiceAsync = productServiceAsync;
+    private final ProductService syncProductService;
+    private final ProductService asyncProductService;
+
+    public ProductController(@Qualifier("syncProductService") ProductService syncProductService,
+                             @Qualifier("asyncProductService") ProductService asyncProductService) {
+        this.syncProductService = syncProductService;
+        this.asyncProductService = asyncProductService;
     }
 
     @PostMapping("/sync")
     public ResponseEntity<Object> createProductSync(@RequestBody CreateProductRequest request){
 
-        String productId;
         try {
-            productId = productServiceSync.createProduct(request);
+            String productId = syncProductService.createProduct(request);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(productId);
+        } catch (Exception e) {
+            LOGGER.error("Error creating product synchronously: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to create product synchronously", e);
         }
-        catch (Exception e){
-            LOGGER.error(e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorMessage(new Date(), e.getMessage(), "/products"));
-        }
-        return ResponseEntity.status(HttpStatus.CREATED).body(productId);
     }
 
     @PostMapping("/async")
     public ResponseEntity<Object> createProductAsync(@RequestBody CreateProductRequest request){
-
-        String productId;
         try {
-            productId = productServiceAsync.createProduct(request);
+            String productId = asyncProductService.createProduct(request);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(productId);
+        } catch (Exception e) {
+            LOGGER.error("Error creating product asynchronously: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to create product asynchronously", e);
         }
-        catch (Exception e){
-            LOGGER.error(e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorMessage(new Date(), e.getMessage(), "/products"));
-        }
-        return ResponseEntity.status(HttpStatus.CREATED).body(productId);
     }
 }
